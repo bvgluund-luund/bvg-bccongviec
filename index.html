@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Công việc Đội Nhóm</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .tab-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .tab-btn.active:hover {
+            background: #2563eb;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .admin-tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .admin-tab-nav .tab-btn {
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+
+        .admin-content {
+            display: none;
+        }
+
+        .admin-content.active {
+            display: block;
+        }
+
+        .header {
+            background: white;
+            padding: 24px 30px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-title h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .header-title p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        select, input[type="text"], input[type="date"], input[type="password"], input[type="file"] {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-info {
+            background: #0891b2;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0e7490;
+        }
+
+        .admin-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .admin-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .form-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-row input, .form-row select, .form-row textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tasks-section {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .task-name {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .priority-badge, .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-high { background: #fee2e2; color: #991b1b; }
+        .priority-medium { background: #fef3c7; color: #92400e; }
+        .priority-low { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #dcfce7; color: #166534; }
+        .status-inprogress { background: #fef3c7; color: #92400e; }
+        .status-pending { background: #dbeafe; color: #1e40af; }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .task-actions button {
+            padding: 6px 10px;
+            font-size: 11px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #e0e7ff;
+            color: #2563eb;
+        }
+
+        .btn-edit:hover {
+            background: #c7d2fe;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) {
+            .kpi-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #2563eb;
+        }
+
+        .kpi-card.orange { border-left-color: #f97316; }
+        .kpi-card.green { border-left-color: #16a34a; }
+        .kpi-card.purple { border-left-color: #9333ea; }
+
+        .kpi-title {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+            font-weight: bold;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        #editTeamModal[style*="display: flex"],
+        #editMemberModal[style*="display: flex"],
+        #editTaskModal[style*="display: flex"] {
+            display: flex !important;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .login-input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .login-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .login-input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .toggle-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- ROLE SELECTION SCREEN -->
+    <div id="roleScreen" class="login-container">
+        <div class="login-title">👋 Chọn Vai trò</div>
+        <p style="color: #666; margin-bottom: 30px; font-size: 14px;">Bạn là Admin hay Nhân viên?</p>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="switchToAdminLogin()" style="flex: 1;">🔐 Admin</button>
+            <button class="btn btn-secondary" onclick="switchToEmployeeLogin()" style="flex: 1;">👤 Nhân viên</button>
+        </div>
+    </div>
+
+    <!-- ADMIN LOGIN SCREEN -->
+    <div id="adminLoginScreen" style="display: none;" class="login-container">
+        <div class="login-title">🔐 Đăng nhập Admin</div>
+        <button class="btn btn-secondary" onclick="backToRoleScreen()" style="position: absolute; top: 20px; left: 20px; padding: 8px 12px; font-size: 12px;">← Quay lại</button>
+        <div id="adminLoginError" class="alert alert-error" style="display: none;"></div>
+        <div class="login-input-group">
+            <label>ID Admin</label>
+            <input type="text" id="adminId" placeholder="Luund" value="Luund">
+        </div>
+        <div class="login-input-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="adminPassword" placeholder="123456" value="">
+        </div>
+        <button class="btn btn-primary" onclick="adminLogin()" style="width: 100%; padding: 12px;">Đăng nhập</button>
+    </div>
+
+    <!-- EMPLOYEE LOGIN SCREEN -->
+    <div id="employeeLoginScreen" style="display: none;" class="login-container">
+        <div class="login-title">👤 Đăng nhập Nhân viên</div>
+        <button class="btn btn-secondary" onclick="backToRoleScreen()" style="position: absolute; top: 20px; left: 20px; padding: 8px 12px; font-size: 12px;">← Quay lại</button>
+        <div id="empLoginError" class="alert alert-error" style="display: none;"></div>
+        <div class="login-input-group">
+            <label>ID nhân viên</label>
+            <input type="text" id="empId" placeholder="Ví dụ: MANHTD">
+        </div>
+        <div class="login-input-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="empPassword" placeholder="Nhập mật khẩu">
+        </div>
+        <button class="btn btn-primary" onclick="employeeLogin()" style="width: 100%; padding: 12px;">Đăng nhập</button>
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">💡 <strong>Demo:</strong> ID: MANHTD, Mật khẩu: 123456</p>
+    </div>
+
+    <!-- EDIT TEAM MODAL -->
+    <div id="editTeamModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="login-container" style="max-width: 500px;">
+            <div class="login-title">✏️ Sửa Thông tin Team</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Tên Team *</label>
+                    <input type="text" id="editTeamName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mô tả Team</label>
+                    <input type="text" id="editTeamDesc">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Leader</label>
+                    <select id="editTeamLeader"><option value="">-- Chọn Leader --</option></select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="saveTeamEdit()">💾 Lưu</button>
+                <button class="btn btn-secondary" onclick="closeEditTeamModal()">❌ Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MEMBER MODAL -->
+    <div id="editMemberModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="login-container" style="max-width: 500px;">
+            <div class="login-title">✏️ Sửa Thông tin Thành viên</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">ID nhân viên (không sửa được)</label>
+                    <input type="text" id="editMemberId" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tên thành viên *</label>
+                    <input type="text" id="editMemberName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu *</label>
+                    <input type="password" id="editMemberPassword">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Chọn Team *</label>
+                    <select id="editMemberTeam"></select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="saveMemberEdit()">💾 Lưu</button>
+                <button class="btn btn-secondary" onclick="closeEditMemberModal()">❌ Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT TASK MODAL -->
+    <div id="editTaskModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto;">
+        <div class="login-container" style="max-width: 600px; margin: 20px auto;">
+            <div class="login-title">✏️ Sửa Công việc</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Tên công việc *</label>
+                    <input type="text" id="editTaskName">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mô tả</label>
+                    <input type="text" id="editTaskDesc">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Giao cho *</label>
+                    <select id="editTaskMember"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Team *</label>
+                    <select id="editTaskTeam"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ưu tiên</label>
+                    <select id="editTaskPriority">
+                        <option value="low">Thấp</option>
+                        <option value="medium">Trung bình</option>
+                        <option value="high">Cao</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ngày bắt đầu *</label>
+                    <input type="date" id="editTaskStartDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ngày kết thúc *</label>
+                    <input type="date" id="editTaskEndDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Trạng thái</label>
+                    <select id="editTaskStatus">
+                        <option value="pending">Chờ xử lý</option>
+                        <option value="inprogress">Đang thực hiện</option>
+                        <option value="completed">Hoàn thành</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="saveTaskEdit()">💾 Lưu</button>
+                <button class="btn btn-secondary" onclick="closeEditTaskModal()">❌ Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD SCREEN -->
+    <div id="changePasswordScreen" style="display: none; max-width: 400px; margin: 50px auto;">
+        <div class="login-container">
+            <div class="login-title">🔑 Đổi Mật khẩu Lần Đầu</div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">Vui lòng đổi mật khẩu của bạn trước khi sử dụng hệ thống</p>
+            <div id="changePassError" class="alert alert-error" style="display: none;"></div>
+            <div class="login-input-group">
+                <label>Mật khẩu cũ</label>
+                <input type="password" id="oldPassword" placeholder="123456">
+            </div>
+            <div class="login-input-group">
+                <label>Mật khẩu mới</label>
+                <input type="password" id="newPassword" placeholder="Nhập mật khẩu mới">
+            </div>
+            <div class="login-input-group">
+                <label>Xác nhận mật khẩu mới</label>
+                <input type="password" id="confirmPassword" placeholder="Xác nhận mật khẩu">
+            </div>
+            <button class="btn btn-success" onclick="saveNewPassword()" style="width: 100%; padding: 12px;">Đổi mật khẩu</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="container" id="mainApp" style="display: none;">
+        <!-- TAB NAVIGATION - ADMIN -->
+        <div class="tab-navigation" id="adminNav" style="display: none;">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('add-member')">👤 Thêm Thành viên</button>
+            <button class="tab-btn" onclick="switchTab('add-task')">📊 Danh mục Công việc</button>
+            <button class="tab-btn" onclick="switchTab('tasks')">✅ Quản lý Team</button>
+            <button class="tab-btn" onclick="switchTab('report')">📋 Báo cáo</button>
+            <button class="tab-btn" onclick="switchTab('tools')">⚙️ Công cụ</button>
+            <button class="tab-btn" onclick="adminLogout()" style="margin-left: auto;">🚪 Đăng xuất</button>
+        </div>
+
+        <!-- TAB NAVIGATION - EMPLOYEE -->
+        <div class="tab-navigation" id="employeeNav" style="display: none;">
+            <button class="tab-btn active" onclick="switchEmployeeTab('my-tasks')">📋 Công việc của tôi</button>
+            <button class="tab-btn" onclick="switchEmployeeTab('my-progress')">📊 Tiến độ của tôi</button>
+            <button class="tab-btn" onclick="employeeLogout()" style="margin-left: auto;">🚪 Đăng xuất</button>
+        </div>
+
+        <!-- ===== DASHBOARD TAB ===== -->
+        <div id="dashboard" class="tab-content active">
+            <div class="header">
+                <div class="header-title">
+                    <h1>📊 Dashboard Báo cáo Công việc</h1>
+                    <p>Tổng hợp tiến độ thực hiện công việc của đội nhóm</p>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div style="font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase;">Bộ lọc:</div>
+                <select id="dashboardTeam" onchange="updateDashboard()">
+                    <option value="all">Tất cả team</option>
+                </select>
+                <select id="dashboardMember" onchange="updateDashboard()">
+                    <option value="all">Tất cả thành viên</option>
+                </select>
+            </div>
+
+            <div class="kpi-section">
+                <div class="kpi-card">
+                    <div class="kpi-title">✅ Công việc hoàn thành</div>
+                    <div class="kpi-value" id="dashKpiCompleted">0</div>
+                    <div class="kpi-subtext" id="dashKpiCompletedText">Trong tổng số công việc</div>
+                </div>
+                <div class="kpi-card orange">
+                    <div class="kpi-title">📈 Tỷ lệ hoàn thành</div>
+                    <div class="kpi-value" id="dashKpiRate">0%</div>
+                    <div class="kpi-subtext">Mục tiêu: 80%</div>
+                </div>
+                <div class="kpi-card green">
+                    <div class="kpi-title">⚠️ Công việc quá hạn</div>
+                    <div class="kpi-value" id="dashKpiOverdue">0</div>
+                    <div class="kpi-subtext">Cần xử lý ưu tiên</div>
+                </div>
+                <div class="kpi-card purple">
+                    <div class="kpi-title">⚡ Đang thực hiện</div>
+                    <div class="kpi-value" id="dashKpiInProgress">0</div>
+                    <div class="kpi-subtext">Công việc chưa hoàn thành</div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-card">
+                    <div class="chart-title">📊 Phân bố trạng thái công việc</div>
+                    <div class="chart-container">
+                        <canvas id="dashStatusChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">👥 Hiệu suất từng thành viên</div>
+                    <div class="chart-container">
+                        <canvas id="dashMemberChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <div class="section-title">📋 Danh sách công việc</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên công việc</th>
+                            <th>Người phụ trách</th>
+                            <th>Team</th>
+                            <th>Ưu tiên</th>
+                            <th>Ngày kết thúc</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashTasksTableBody">
+                        <tr><td colspan="7" class="empty-state">Chưa có công việc</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== ADD MEMBER TAB ===== -->
+        <div id="add-member" class="tab-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1>👤 Thêm Thành viên mới</h1>
+                    <p>Nhanh chóng thêm thành viên vào hệ thống</p>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <div class="admin-title">📝 Form Thêm Thành viên</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">ID nhân viên *</label>
+                        <input type="text" id="quickMemberId" placeholder="Ví dụ: NV001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tên thành viên *</label>
+                        <input type="text" id="quickMemberName" placeholder="Ví dụ: Nguyễn Văn A">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mật khẩu *</label>
+                        <input type="password" id="quickMemberPassword" placeholder="Nhập mật khẩu">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Chọn Team *</label>
+                        <select id="quickMemberTeam">
+                            <option value="">-- Chọn Team --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success" onclick="addMemberQuick()">➕ Thêm Thành viên</button>
+                    <button class="btn btn-secondary" onclick="clearMemberFormQuick()">🔄 Xóa form</button>
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <div class="section-title">👥 Danh sách Thành viên</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>ID</th>
+                            <th>Tên thành viên</th>
+                            <th>Team</th>
+                            <th>Ngày tạo</th>
+                            <th>Công việc</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quickMembersTableBody">
+                        <tr><td colspan="7" class="empty-state">Chưa có thành viên</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== ADD TASK TAB ===== -->
+        <div id="add-task" class="tab-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1>📊 Danh mục Công việc</h1>
+                    <p>Quản lý và nhân rộng công việc sang tháng tiếp theo</p>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <div class="admin-title">📝 Form Thêm Công việc</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Tên công việc *</label>
+                        <input type="text" id="quickTaskName" placeholder="Ví dụ: Phát triển API">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mô tả công việc</label>
+                        <input type="text" id="quickTaskDesc" placeholder="Mô tả chi tiết">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Giao cho *</label>
+                        <select id="quickTaskMember">
+                            <option value="">-- Chọn thành viên --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Team *</label>
+                        <select id="quickTaskTeam">
+                            <option value="">-- Chọn team --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ưu tiên</label>
+                        <select id="quickTaskPriority">
+                            <option value="low">Thấp</option>
+                            <option value="medium" selected>Trung bình</option>
+                            <option value="high">Cao</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ngày bắt đầu *</label>
+                        <input type="date" id="quickTaskStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ngày kết thúc *</label>
+                        <input type="date" id="quickTaskEndDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Trạng thái</label>
+                        <select id="quickTaskStatus">
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="inprogress">Đang thực hiện</option>
+                            <option value="completed">Hoàn thành</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success" onclick="addTaskQuick()">➕ Thêm Công việc</button>
+                    <button class="btn btn-secondary" onclick="clearTaskFormQuick()">🔄 Xóa form</button>
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="section-title">📋 Danh mục Công việc</div>
+                    <div style="display: flex; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" id="selectAllTasks" onchange="selectAllTasks(this.checked)" style="cursor: pointer;">
+                            <span style="font-size: 13px; color: #666;">Chọn tất cả</span>
+                        </label>
+                        <button class="btn btn-primary" onclick="copyTasksToNextMonth()" style="padding: 8px 16px;">📅 Copy sang tháng tiếp theo</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">✓</th>
+                            <th>STT</th>
+                            <th>Tên công việc</th>
+                            <th>Giao cho</th>
+                            <th>Team</th>
+                            <th>Ưu tiên</th>
+                            <th>Kết thúc</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quickTasksTableBody">
+                        <tr><td colspan="9" class="empty-state">Chưa có công việc</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== TASKS MANAGEMENT TAB ===== -->
+        <div id="tasks" class="tab-content">
+            <!-- TEAMS MANAGEMENT -->
+            <div id="teams-tab" class="admin-content active">
+                <div class="admin-panel">
+                    <div class="admin-title">🏢 Thêm Team mới</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Tên Team</label>
+                            <input type="text" id="teamName" placeholder="Ví dụ: Team A">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mô tả Team</label>
+                            <input type="text" id="teamDesc" placeholder="Mô tả nhiệm vụ">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Leader</label>
+                            <select id="teamLeader"><option value="">-- Chọn Leader --</option></select>
+                        </div>
+                        <div></div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-success" onclick="addTeam()">➕ Thêm Team</button>
+                        <button class="btn btn-secondary" onclick="clearTeamForm()">🔄 Xóa form</button>
+                    </div>
+                </div>
+
+                <div class="tasks-section">
+                    <div class="section-title">📋 Danh sách Team</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Tên Team</th>
+                                <th>Mô tả</th>
+                                <th>Leader</th>
+                                <th>Số thành viên</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamsTableBody">
+                            <tr><td colspan="6" class="empty-state">Chưa có Team</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== REPORT TAB ===== -->
+        <div id="report" class="tab-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1>📋 Báo cáo Chi tiết</h1>
+                    <p>Phân tích chi tiết công việc của đội nhóm</p>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <select id="reportTeam" onchange="generateReport()"><option value="all">Tất cả team</option></select>
+                <select id="reportMember" onchange="generateReport()"><option value="all">Tất cả thành viên</option></select>
+                <button class="btn btn-primary" onclick="printReport()">🖨️ In báo cáo</button>
+            </div>
+
+            <div class="kpi-section">
+                <div class="kpi-card">
+                    <div class="kpi-title">📋 Tổng công việc</div>
+                    <div class="kpi-value" id="reportTotal">0</div>
+                </div>
+                <div class="kpi-card green">
+                    <div class="kpi-title">✅ Hoàn thành</div>
+                    <div class="kpi-value" id="reportCompleted">0</div>
+                </div>
+                <div class="kpi-card orange">
+                    <div class="kpi-title">⏳ Đang thực hiện</div>
+                    <div class="kpi-value" id="reportInProgress">0</div>
+                </div>
+                <div class="kpi-card purple">
+                    <div class="kpi-title">📈 Tỷ lệ (%)</div>
+                    <div class="kpi-value" id="reportPercent">0%</div>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-bottom: 24px;">
+                <div class="chart-title">📊 Tiến độ hoàn thành theo ngày</div>
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <div class="section-title">👥 Hiệu suất từng thành viên</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thành viên</th>
+                            <th>Team</th>
+                            <th>Tổng CV</th>
+                            <th>Hoàn</th>
+                            <th>Đang xử lý</th>
+                            <th>Tỷ lệ %</th>
+                            <th>Đánh giá</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportMembersBody">
+                        <tr><td colspan="7" class="empty-state">Chưa có dữ liệu</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== TOOLS TAB ===== -->
+        <div id="tools" class="tab-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1>⚙️ Công cụ Hệ thống</h1>
+                </div>
+            </div>
+            <div class="tasks-section">
+                <p style="text-align: center; padding: 40px; color: #999;">Công cụ sẽ được thêm vào sau</p>
+            </div>
+        </div>
+
+        <!-- ===== EMPLOYEE: MY TASKS ===== -->
+        <div id="my-tasks" class="tab-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1>📋 Công việc của tôi</h1>
+                    <p id="empGreeting">Xin chào nhân viên!</p>
+                </div>
+            </div>
+
+            <div class="kpi-section">
+                <div class="kpi-card">
+                    <div class="kpi-title">📋 Tổng công việc</div>
+                    <div class="kpi-value" id="empTotalTasks">0</div>
+                </div>
+                <div class="kpi-card green">
+                    <div class="kpi-title">✅ Hoàn thành</div>
+                    <div class="kpi-value" id="empCompletedTasks">0</div>
+                </div>
+                <div class="kpi-card orange">
+                    <div class="kpi-title">⏳ Đang xử lý</div>
+                    <div class="kpi-value" id="empInProgressTasks">0</div>
+                </div>
+                <div class="kpi-card purple">
+                    <div class="kpi-title">📈 Tỷ lệ hoàn thành</div>
+                    <div class="kpi-value" id="empProgressRate">0%</div>
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <div class="section-title">📋 Danh sách công việc</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên công việc</th>
+                            <th>Mô tả</th>
+                            <th>Ưu tiên</th>
+                            <th>Ngày kết thúc</th>
+                            <th>Trạng thái</th>
+                            <th>Hoàn thành</th>
+                        </tr>
+                    </thead>
+                    <tbody id="empTasksTableBody">
+                        <tr><td colspan="7" class="empty-state">Chưa có công việc được giao</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== EMPLOYEE: MY PROGRESS ===== -->
+        <div id="my-progress" class="tab-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1>📊 Tiến độ của tôi</h1>
+                    <p>Chi tiết hoàn thành công việc theo thời gian</p>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-bottom: 24px;">
+                <div class="chart-title">📊 Phân bố trạng thái công việc</div>
+                <div class="chart-container">
+                    <canvas id="empStatusChart"></canvas>
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <div class="section-title">📋 Chi tiết công việc theo trạng thái</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên công việc</th>
+                            <th>Ưu tiên</th>
+                            <th>Bắt đầu</th>
+                            <th>Kết thúc</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="empProgressTableBody">
+                        <tr><td colspan="6" class="empty-state">Chưa có công việc</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL XEM CHI TIẾT CÔNG VIỆC CỦA THÀNH VIÊN -->
+    <div id="memberTasksModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeMemberTasksModal()">✕</button>
+            <div class="modal-header">📋 Công việc của <span id="memberNameInModal">Thành viên</span></div>
+            <div class="tasks-section" style="margin-bottom: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên công việc</th>
+                            <th>Mô tả</th>
+                            <th>Ưu tiên</th>
+                            <th>Ngày kết thúc</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberTasksBody">
+                        <tr><td colspan="6" class="empty-state">Chưa có công việc</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== DATA MANAGEMENT =====
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let members = JSON.parse(localStorage.getItem('members')) || [];
+        let teams = JSON.parse(localStorage.getItem('teams')) || [];
+        let adminAccount = JSON.parse(localStorage.getItem('adminAccount')) || {
+            id: 'Luund',
+            password: '123456',
+            firstLogin: true
+        };
+
+        let currentUser = null;
+        let userType = null;
+        let statusChart, memberChart, progressChart, empStatusChart;
+
+        // ===== INITIALIZE DATA =====
+        function initializeData() {
+            const isFirstLoad = !localStorage.getItem('initialized');
+            
+            if (teams.length === 0 || isFirstLoad) {
+                teams = [];
+                teams.push({
+                    id: 'team-default',
+                    name: 'Team Chính',
+                    desc: 'Đội phát triển sản phẩm chính',
+                    leader: '',
+                    createdDate: new Date().toISOString()
+                });
+            }
+
+            if (members.length === 0 || isFirstLoad) {
+                const defaultMembers = [
+                    { id: 'MANHTD', name: 'Trịnh Đức Mạnh', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'MENDT', name: 'Đào Thị Mến', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'LANVTH', name: 'Vũ Thị Hoàng Lan', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'QUYENNT', name: 'Nguyễn Thị Quyên', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'VANVH', name: 'Hải Vân', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'HOANDT', name: 'Đỗ Thị Hoan', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'LINHDT', name: 'Nguyễn Thị Thùy Linh', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'HUONGNT', name: 'Nguyễn Thị Hương', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'HUNGVT', name: 'Vũ Tuấn Hưng', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
+                    { id: 'BINHDT', name: 'Đỗ Thị Bình', password: '123456', team: 'team-default', createdDate: new Date().toISOString() }
+                ];
+                members = defaultMembers;
+            }
+
+            if (tasks.length === 0 || isFirstLoad) {
+                const defaultTasks = [
+                    { id: 1, name: 'Phân tích yêu cầu', desc: 'Phân tích yêu cầu khách hàng', member: 'MANHTD', team: 'team-default', priority: 'high', startDate: '2026-07-17', endDate: '2026-07-20', status: 'inprogress', completed: false, createdDate: new Date().toISOString() },
+                    { id: 2, name: 'Thiết kế hệ thống', desc: 'Thiết kế kiến trúc hệ thống', member: 'MENDT', team: 'team-default', priority: 'high', startDate: '2026-07-17', endDate: '2026-07-25', status: 'inprogress', completed: false, createdDate: new Date().toISOString() },
+                    { id: 3, name: 'Phát triển API', desc: 'Xây dựng REST API', member: 'LANVTH', team: 'team-default', priority: 'high', startDate: '2026-07-18', endDate: '2026-07-30', status: 'inprogress', completed: false, createdDate: new Date().toISOString() },
+                    { id: 4, name: 'Kiểm thử hệ thống', desc: 'Thực hiện kiểm thử toàn bộ', member: 'QUYENNT', team: 'team-default', priority: 'medium', startDate: '2026-07-20', endDate: '2026-08-05', status: 'pending', completed: false, createdDate: new Date().toISOString() },
+                    { id: 5, name: 'Tập huấn người dùng', desc: 'Huấn luyện người dùng cuối', member: 'VANVH', team: 'team-default', priority: 'medium', startDate: '2026-08-01', endDate: '2026-08-10', status: 'pending', completed: false, createdDate: new Date().toISOString() },
+                    { id: 6, name: 'Viết tài liệu', desc: 'Viết tài liệu kỹ thuật', member: 'HOANDT', team: 'team-default', priority: 'low', startDate: '2026-07-17', endDate: '2026-07-31', status: 'completed', completed: true, createdDate: new Date().toISOString() },
+                    { id: 7, name: 'Sửa lỗi giai đoạn 1', desc: 'Sửa các lỗi phát hiện', member: 'LINHDT', team: 'team-default', priority: 'high', startDate: '2026-07-19', endDate: '2026-07-28', status: 'inprogress', completed: false, createdDate: new Date().toISOString() },
+                    { id: 8, name: 'Tối ưu hóa hiệu năng', desc: 'Tối ưu hóa performance', member: 'HUONGNT', team: 'team-default', priority: 'medium', startDate: '2026-07-25', endDate: '2026-08-08', status: 'pending', completed: false, createdDate: new Date().toISOString() },
+                    { id: 9, name: 'Chuẩn bị triển khai', desc: 'Chuẩn bị môi trường triển khai', member: 'HUNGVT', team: 'team-default', priority: 'high', startDate: '2026-08-05', endDate: '2026-08-15', status: 'pending', completed: false, createdDate: new Date().toISOString() },
+                    { id: 10, name: 'Hỗ trợ sau triển khai', desc: 'Hỗ trợ kỹ thuật sau khi triển khai', member: 'BINHDT', team: 'team-default', priority: 'medium', startDate: '2026-08-16', endDate: '2026-09-15', status: 'pending', completed: false, createdDate: new Date().toISOString() }
+                ];
+                tasks = defaultTasks;
+            }
+
+            saveAllData();
+            
+            if (isFirstLoad) {
+                localStorage.setItem('initialized', 'true');
+            }
+        }
+
+        // ===== LOGIN FLOW =====
+        function switchToAdminLogin() {
+            document.getElementById('roleScreen').style.display = 'none';
+            document.getElementById('adminLoginScreen').style.display = 'block';
+        }
+
+        function switchToEmployeeLogin() {
+            document.getElementById('roleScreen').style.display = 'none';
+            document.getElementById('employeeLoginScreen').style.display = 'block';
+        }
+
+        function backToRoleScreen() {
+            document.getElementById('adminLoginScreen').style.display = 'none';
+            document.getElementById('employeeLoginScreen').style.display = 'none';
+            document.getElementById('roleScreen').style.display = 'block';
+        }
+
+        function adminLogin() {
+            const id = document.getElementById('adminId').value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+            const errorDiv = document.getElementById('adminLoginError');
+
+            if (!id || !password) {
+                errorDiv.textContent = '❌ Vui lòng nhập ID và mật khẩu';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (id !== adminAccount.id || password !== adminAccount.password) {
+                errorDiv.textContent = '❌ ID hoặc mật khẩu không chính xác';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (adminAccount.firstLogin) {
+                document.getElementById('adminLoginScreen').style.display = 'none';
+                document.getElementById('changePasswordScreen').style.display = 'block';
+            } else {
+                loginSuccess('admin', id);
+            }
+        }
+
+        function employeeLogin() {
+            const id = document.getElementById('empId').value.trim();
+            const password = document.getElementById('empPassword').value.trim();
+            const errorDiv = document.getElementById('empLoginError');
+
+            if (!id || !password) {
+                errorDiv.textContent = '❌ Vui lòng nhập ID và mật khẩu';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            const currentMembers = JSON.parse(localStorage.getItem('members')) || [];
+            
+            if (currentMembers.length === 0) {
+                errorDiv.textContent = '❌ Chưa có dữ liệu nhân viên. Vui lòng liên hệ Admin.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            const member = currentMembers.find(m => m.id === id && m.password === password);
+            if (!member) {
+                errorDiv.textContent = '❌ ID hoặc mật khẩu không chính xác. (Ví dụ: MANHTD / 123456)';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            members = currentMembers;
+            loginSuccess('employee', id);
+        }
+
+        function saveNewPassword() {
+            const oldPass = document.getElementById('oldPassword').value.trim();
+            const newPass = document.getElementById('newPassword').value.trim();
+            const confirmPass = document.getElementById('confirmPassword').value.trim();
+            const errorDiv = document.getElementById('changePassError');
+
+            if (!oldPass || !newPass || !confirmPass) {
+                errorDiv.textContent = '❌ Vui lòng điền đầy đủ thông tin';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (oldPass !== adminAccount.password) {
+                errorDiv.textContent = '❌ Mật khẩu cũ không chính xác';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                errorDiv.textContent = '❌ Mật khẩu mới không khớp';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (newPass.length < 6) {
+                errorDiv.textContent = '❌ Mật khẩu phải có ít nhất 6 ký tự';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            adminAccount.password = newPass;
+            adminAccount.firstLogin = false;
+            localStorage.setItem('adminAccount', JSON.stringify(adminAccount));
+            loginSuccess('admin', adminAccount.id);
+        }
+
+        function loginSuccess(type, userId) {
+            userType = type;
+            currentUser = userId;
+            
+            document.getElementById('adminLoginScreen').style.display = 'none';
+            document.getElementById('employeeLoginScreen').style.display = 'none';
+            document.getElementById('changePasswordScreen').style.display = 'none';
+            document.getElementById('roleScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+
+            if (type === 'admin') {
+                document.getElementById('adminNav').style.display = 'flex';
+                document.getElementById('employeeNav').style.display = 'none';
+                loadAllData();
+            } else if (type === 'employee') {
+                document.getElementById('employeeNav').style.display = 'flex';
+                document.getElementById('adminNav').style.display = 'none';
+                const member = members.find(m => m.id === userId);
+                document.getElementById('empGreeting').textContent = `Xin chào ${member.name}!`;
+                updateEmployeeDashboard();
+                switchEmployeeTab('my-tasks');
+            }
+        }
+
+        function adminLogout() {
+            currentUser = null;
+            userType = null;
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('roleScreen').style.display = 'block';
+            document.getElementById('adminNav').style.display = 'none';
+            document.getElementById('employeeNav').style.display = 'none';
+            document.getElementById('adminLoginScreen').style.display = 'block';
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        function employeeLogout() {
+            currentUser = null;
+            userType = null;
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('roleScreen').style.display = 'block';
+            document.getElementById('adminNav').style.display = 'none';
+            document.getElementById('employeeNav').style.display = 'none';
+            document.getElementById('employeeLoginScreen').style.display = 'block';
+            document.getElementById('empId').value = '';
+            document.getElementById('empPassword').value = '';
+        }
+
+        // ===== TAB SWITCHING =====
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#adminNav .tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard') updateDashboard();
+            else if (tabName === 'add-member') updateQuickMembersTable();
+            else if (tabName === 'add-task') updateQuickTasksTable();
+            else if (tabName === 'report') generateReport();
+        }
+
+        function switchEmployeeTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#employeeNav .tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'my-tasks') updateEmployeeTasks();
+            else if (tabName === 'my-progress') updateEmployeeProgress();
+        }
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-nav .tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ===== EMPLOYEE DASHBOARD =====
+        function updateEmployeeDashboard() {
+            updateEmployeeTasks();
+            updateEmployeeProgress();
+        }
+
+        function updateEmployeeTasks() {
+            const myTasks = tasks.filter(t => t.member === currentUser);
+            const completed = myTasks.filter(t => t.completed).length;
+            const inProgress = myTasks.filter(t => t.status === 'inprogress').length;
+            const pending = myTasks.filter(t => t.status === 'pending').length;
+            const rate = myTasks.length > 0 ? Math.round((completed / myTasks.length) * 100) : 0;
+
+            document.getElementById('empTotalTasks').textContent = myTasks.length;
+            document.getElementById('empCompletedTasks').textContent = completed;
+            document.getElementById('empInProgressTasks').textContent = inProgress;
+            document.getElementById('empProgressRate').textContent = rate + '%';
+
+            const body = document.getElementById('empTasksTableBody');
+            if (myTasks.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" class="empty-state">Chưa có công việc được giao</td></tr>';
+            } else {
+                body.innerHTML = myTasks.map((task, index) => {
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="task-name">${task.name}</td>
+                            <td>${task.desc}</td>
+                            <td><span class="priority-badge priority-${task.priority}">${task.priority === 'high' ? 'Cao' : task.priority === 'medium' ? 'TB' : 'Thấp'}</span></td>
+                            <td>${task.endDate}</td>
+                            <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
+                            <td><input type="checkbox" class="toggle-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskComplete(${task.id})"></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function updateEmployeeProgress() {
+            const myTasks = tasks.filter(t => t.member === currentUser);
+            
+            const completed = myTasks.filter(t => t.completed).length;
+            const inProgress = myTasks.filter(t => t.status === 'inprogress').length;
+            const pending = myTasks.filter(t => t.status === 'pending').length;
+
+            const ctxStatus = document.getElementById('empStatusChart').getContext('2d');
+            if (empStatusChart) empStatusChart.destroy();
+            empStatusChart = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Đang xử lý', 'Chờ xử lý'],
+                    datasets: [{
+                        data: [completed, inProgress, pending],
+                        backgroundColor: ['#16a34a', '#f97316', '#dbeafe']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            const body = document.getElementById('empProgressTableBody');
+            if (myTasks.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có công việc</td></tr>';
+            } else {
+                body.innerHTML = myTasks.map((task, index) => {
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="task-name">${task.name}</td>
+                            <td><span class="priority-badge priority-${task.priority}">${task.priority === 'high' ? 'Cao' : task.priority === 'medium' ? 'TB' : 'Thấp'}</span></td>
+                            <td>${task.startDate}</td>
+                            <td>${task.endDate}</td>
+                            <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function toggleTaskComplete(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                task.status = task.completed ? 'completed' : 'inprogress';
+                saveTasks();
+                updateEmployeeTasks();
+                updateEmployeeProgress();
+            }
+        }
+
+        // ===== ADD TEAM =====
+        function addTeam() {
+            const name = document.getElementById('teamName').value.trim();
+            const desc = document.getElementById('teamDesc').value.trim();
+            const leader = document.getElementById('teamLeader').value;
+
+            if (!name) {
+                alert('❌ Vui lòng nhập tên Team');
+                return;
+            }
+
+            const team = {
+                id: 'team-' + Date.now(),
+                name,
+                desc,
+                leader,
+                createdDate: new Date().toISOString()
+            };
+
+            teams.push(team);
+            saveTeams();
+            clearTeamForm();
+            updateTeamsTable();
+            updateTeamDropdowns();
+            alert('✅ Thêm Team thành công');
+        }
+
+        function clearTeamForm() {
+            document.getElementById('teamName').value = '';
+            document.getElementById('teamDesc').value = '';
+            document.getElementById('teamLeader').value = '';
+        }
+
+        function updateTeamsTable() {
+            const body = document.getElementById('teamsTableBody');
+            if (teams.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có Team</td></tr>';
+                return;
+            }
+
+            body.innerHTML = teams.map((team, index) => {
+                const memberCount = members.filter(m => m.team === team.id).length;
+                const leaderName = members.find(m => m.id === team.leader)?.name || 'N/A';
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="task-name">${team.name}</td>
+                        <td>${team.desc}</td>
+                        <td>${leaderName}</td>
+                        <td>${memberCount}</td>
+                        <td class="task-actions">
+                            <button class="btn-edit" onclick="openEditTeamModal('${team.id}')">✏️ Sửa</button>
+                            <button class="btn-delete" onclick="deleteTeam('${team.id}')">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function deleteTeam(teamId) {
+            if (confirm('🗑️ Xóa Team này?')) {
+                teams = teams.filter(t => t.id !== teamId);
+                saveTeams();
+                updateTeamsTable();
+                updateTeamDropdowns();
+                alert('✅ Xóa thành công');
+            }
+        }
+
+        // ===== EDIT TEAM =====
+        let currentEditingTeamId = null;
+        function openEditTeamModal(teamId) {
+            currentEditingTeamId = teamId;
+            const team = teams.find(t => t.id === teamId);
+            if (!team) return;
+
+            document.getElementById('editTeamName').value = team.name;
+            document.getElementById('editTeamDesc').value = team.desc;
+            document.getElementById('editTeamLeader').value = team.leader || '';
+            
+            const leaderSelect = document.getElementById('editTeamLeader');
+            leaderSelect.innerHTML = '<option value="">-- Chọn Leader --</option>';
+            members.forEach(member => {
+                leaderSelect.innerHTML += `<option value="${member.id}">${member.name}</option>`;
+            });
+            leaderSelect.value = team.leader || '';
+
+            document.getElementById('editTeamModal').style.display = 'flex';
+        }
+
+        function saveTeamEdit() {
+            const name = document.getElementById('editTeamName').value.trim();
+            const desc = document.getElementById('editTeamDesc').value.trim();
+            const leader = document.getElementById('editTeamLeader').value;
+
+            if (!name) {
+                alert('❌ Tên Team không được để trống');
+                return;
+            }
+
+            const team = teams.find(t => t.id === currentEditingTeamId);
+            if (team) {
+                team.name = name;
+                team.desc = desc;
+                team.leader = leader;
+                saveTeams();
+                updateTeamsTable();
+                updateTeamDropdowns();
+                closeEditTeamModal();
+                alert('✅ Cập nhật Team thành công');
+            }
+        }
+
+        function closeEditTeamModal() {
+            document.getElementById('editTeamModal').style.display = 'none';
+            currentEditingTeamId = null;
+        }
+
+        // ===== ADD MEMBER (Quick) =====
+        function addMemberQuick() {
+            const id = document.getElementById('quickMemberId').value.trim();
+            const name = document.getElementById('quickMemberName').value.trim();
+            const password = document.getElementById('quickMemberPassword').value.trim();
+            const team = document.getElementById('quickMemberTeam').value;
+
+            if (!id || !name || !password || !team) {
+                alert('❌ Vui lòng điền đầy đủ thông tin (*)');
+                return;
+            }
+
+            if (members.find(m => m.id === id)) {
+                alert('❌ ID này đã tồn tại');
+                return;
+            }
+
+            const member = {
+                id,
+                name,
+                password,
+                team,
+                createdDate: new Date().toISOString()
+            };
+
+            members.push(member);
+            saveMembers();
+            clearMemberFormQuick();
+            updateQuickMembersTable();
+            updateMemberDropdowns();
+            alert('✅ Thêm thành viên thành công');
+        }
+
+        function clearMemberFormQuick() {
+            document.getElementById('quickMemberId').value = '';
+            document.getElementById('quickMemberName').value = '';
+            document.getElementById('quickMemberPassword').value = '';
+            document.getElementById('quickMemberTeam').value = '';
+        }
+
+        function updateQuickMembersTable() {
+            const body = document.getElementById('quickMembersTableBody');
+            if (members.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" class="empty-state">Chưa có thành viên</td></tr>';
+                return;
+            }
+
+            body.innerHTML = members.map((member, index) => {
+                const teamName = teams.find(t => t.id === member.team)?.name || 'N/A';
+                const memberTasks = tasks.filter(t => t.member === member.id).length;
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${member.id}</td>
+                        <td class="task-name">${member.name}</td>
+                        <td>${teamName}</td>
+                        <td>${new Date(member.createdDate).toLocaleDateString('vi-VN')}</td>
+                        <td><strong>${memberTasks}</strong></td>
+                        <td class="task-actions">
+                            <button class="btn-edit" onclick="openEditMemberModal('${member.id}')">✏️ Sửa</button>
+                            <button class="btn-info" onclick="viewMemberTasks('${member.id}', '${member.name}')">👀 Xem</button>
+                            <button class="btn-delete" onclick="deleteMember('${member.id}')">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ===== ADD TASK (Quick) =====
+        function addTaskQuick() {
+            const name = document.getElementById('quickTaskName').value.trim();
+            const desc = document.getElementById('quickTaskDesc').value.trim();
+            const member = document.getElementById('quickTaskMember').value;
+            const team = document.getElementById('quickTaskTeam').value;
+            const priority = document.getElementById('quickTaskPriority').value;
+            const startDate = document.getElementById('quickTaskStartDate').value;
+            const endDate = document.getElementById('quickTaskEndDate').value;
+            const status = document.getElementById('quickTaskStatus').value;
+
+            if (!name || !member || !team || !startDate || !endDate) {
+                alert('❌ Vui lòng điền đầy đủ thông tin bắt buộc (*)');
+                return;
+            }
+
+            const task = {
+                id: Date.now(),
+                name,
+                desc,
+                member,
+                team,
+                priority,
+                startDate,
+                endDate,
+                status,
+                completed: status === 'completed',
+                createdDate: new Date().toISOString()
+            };
+
+            tasks.push(task);
+            saveTasks();
+            clearTaskFormQuick();
+            updateQuickTasksTable();
+            updateDashboard();
+            alert('✅ Thêm công việc thành công');
+        }
+
+        function clearTaskFormQuick() {
+            document.getElementById('quickTaskName').value = '';
+            document.getElementById('quickTaskDesc').value = '';
+            document.getElementById('quickTaskMember').value = '';
+            document.getElementById('quickTaskTeam').value = '';
+            document.getElementById('quickTaskPriority').value = 'medium';
+            document.getElementById('quickTaskStartDate').value = '';
+            document.getElementById('quickTaskEndDate').value = '';
+            document.getElementById('quickTaskStatus').value = 'pending';
+        }
+
+        function updateQuickTasksTable() {
+            const body = document.getElementById('quickTasksTableBody');
+            if (tasks.length === 0) {
+                body.innerHTML = '<tr><td colspan="9" class="empty-state">Chưa có công việc</td></tr>';
+                return;
+            }
+
+            body.innerHTML = tasks.map((task, index) => {
+                const memberName = members.find(m => m.id === task.member)?.name || 'N/A';
+                const teamName = teams.find(t => t.id === task.team)?.name || 'N/A';
+                return `
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="task-checkbox" value="${task.id}" style="cursor: pointer;">
+                        </td>
+                        <td>${index + 1}</td>
+                        <td class="task-name">${task.name}</td>
+                        <td>${memberName}</td>
+                        <td>${teamName}</td>
+                        <td><span class="priority-badge priority-${task.priority}">${task.priority === 'high' ? 'Cao' : task.priority === 'medium' ? 'TB' : 'Thấp'}</span></td>
+                        <td>${task.endDate}</td>
+                        <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
+                        <td class="task-actions">
+                            <button class="btn-edit" onclick="openEditTaskModal(${task.id})">✏️ Sửa</button>
+                            <button class="btn-delete" onclick="deleteTask(${task.id})">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function viewMemberTasks(memberId, memberName) {
+            const memberTasks = tasks.filter(t => t.member === memberId);
+            document.getElementById('memberNameInModal').textContent = memberName;
+            
+            const body = document.getElementById('memberTasksBody');
+            if (memberTasks.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có công việc được giao</td></tr>';
+            } else {
+                body.innerHTML = memberTasks.map((task, index) => {
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="task-name">${task.name}</td>
+                            <td>${task.desc}</td>
+                            <td><span class="priority-badge priority-${task.priority}">${task.priority === 'high' ? 'Cao' : task.priority === 'medium' ? 'TB' : 'Thấp'}</span></td>
+                            <td>${task.endDate}</td>
+                            <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('memberTasksModal').classList.add('active');
+        }
+
+        function closeMemberTasksModal() {
+            document.getElementById('memberTasksModal').classList.remove('active');
+        }
+
+        function deleteMember(memberId) {
+            if (confirm('🗑️ Xóa thành viên này?')) {
+                members = members.filter(m => m.id !== memberId);
+                saveMembers();
+                updateQuickMembersTable();
+                updateMemberDropdowns();
+                alert('✅ Xóa thành công');
+            }
+        }
+
+        // ===== EDIT MEMBER =====
+        let currentEditingMemberId = null;
+        function openEditMemberModal(memberId) {
+            currentEditingMemberId = memberId;
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+
+            document.getElementById('editMemberId').value = member.id;
+            document.getElementById('editMemberName').value = member.name;
+            document.getElementById('editMemberPassword').value = member.password;
+            
+            const teamSelect = document.getElementById('editMemberTeam');
+            teamSelect.innerHTML = '<option value="">-- Chọn Team --</option>';
+            teams.forEach(team => {
+                teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+            });
+            teamSelect.value = member.team;
+
+            document.getElementById('editMemberModal').style.display = 'flex';
+        }
+
+        function saveMemberEdit() {
+            const name = document.getElementById('editMemberName').value.trim();
+            const password = document.getElementById('editMemberPassword').value.trim();
+            const team = document.getElementById('editMemberTeam').value;
+
+            if (!name || !password || !team) {
+                alert('❌ Vui lòng điền đầy đủ thông tin bắt buộc');
+                return;
+            }
+
+            const member = members.find(m => m.id === currentEditingMemberId);
+            if (member) {
+                member.name = name;
+                member.password = password;
+                member.team = team;
+                saveMembers();
+                updateQuickMembersTable();
+                updateMemberDropdowns();
+                closeEditMemberModal();
+                alert('✅ Cập nhật thành viên thành công');
+            }
+        }
+
+        function closeEditMemberModal() {
+            document.getElementById('editMemberModal').style.display = 'none';
+            currentEditingMemberId = null;
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('🗑️ Xóa công việc này?')) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                updateQuickTasksTable();
+                updateDashboard();
+                alert('✅ Xóa thành công');
+            }
+        }
+
+        // ===== EDIT TASK =====
+        let currentEditingTaskId = null;
+        function openEditTaskModal(taskId) {
+            currentEditingTaskId = taskId;
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('editTaskName').value = task.name;
+            document.getElementById('editTaskDesc').value = task.desc;
+            document.getElementById('editTaskPriority').value = task.priority;
+            document.getElementById('editTaskStartDate').value = task.startDate;
+            document.getElementById('editTaskEndDate').value = task.endDate;
+            document.getElementById('editTaskStatus').value = task.status;
+
+            const memberSelect = document.getElementById('editTaskMember');
+            memberSelect.innerHTML = '<option value="">-- Chọn thành viên --</option>';
+            members.forEach(member => {
+                memberSelect.innerHTML += `<option value="${member.id}">${member.name}</option>`;
+            });
+            memberSelect.value = task.member;
+
+            const teamSelect = document.getElementById('editTaskTeam');
+            teamSelect.innerHTML = '<option value="">-- Chọn team --</option>';
+            teams.forEach(team => {
+                teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+            });
+            teamSelect.value = task.team;
+
+            document.getElementById('editTaskModal').style.display = 'flex';
+        }
+
+        function saveTaskEdit() {
+            const name = document.getElementById('editTaskName').value.trim();
+            const desc = document.getElementById('editTaskDesc').value.trim();
+            const member = document.getElementById('editTaskMember').value;
+            const team = document.getElementById('editTaskTeam').value;
+            const priority = document.getElementById('editTaskPriority').value;
+            const startDate = document.getElementById('editTaskStartDate').value;
+            const endDate = document.getElementById('editTaskEndDate').value;
+            const status = document.getElementById('editTaskStatus').value;
+
+            if (!name || !member || !team || !startDate || !endDate) {
+                alert('❌ Vui lòng điền đầy đủ thông tin bắt buộc');
+                return;
+            }
+
+            const task = tasks.find(t => t.id === currentEditingTaskId);
+            if (task) {
+                task.name = name;
+                task.desc = desc;
+                task.member = member;
+                task.team = team;
+                task.priority = priority;
+                task.startDate = startDate;
+                task.endDate = endDate;
+                task.status = status;
+                task.completed = status === 'completed';
+                saveTasks();
+                updateQuickTasksTable();
+                updateDashboard();
+                closeEditTaskModal();
+                alert('✅ Cập nhật công việc thành công');
+            }
+        }
+
+        function closeEditTaskModal() {
+            document.getElementById('editTaskModal').style.display = 'none';
+            currentEditingTaskId = null;
+        }
+
+        // ===== COPY TASKS TO NEXT MONTH =====
+        function selectAllTasks(checked) {
+            document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+        }
+
+        function copyTasksToNextMonth() {
+            const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert('❌ Vui lòng chọn ít nhất 1 công việc để copy');
+                return;
+            }
+
+            const selectedTaskIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+            const selectedTasks = tasks.filter(t => selectedTaskIds.includes(t.id));
+
+            if (selectedTasks.length === 0) return;
+
+            const addMonths = (date, months) => {
+                const d = new Date(date);
+                d.setMonth(d.getMonth() + months);
+                return d;
+            };
+
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            let copiedCount = 0;
+            selectedTasks.forEach(task => {
+                const startDate = new Date(task.startDate);
+                const endDate = new Date(task.endDate);
+                
+                const newStartDate = addMonths(startDate, 1);
+                const newEndDate = addMonths(endDate, 1);
+
+                const newTask = {
+                    id: Date.now() + Math.random(),
+                    name: task.name,
+                    desc: task.desc,
+                    member: task.member,
+                    team: task.team,
+                    priority: task.priority,
+                    startDate: formatDate(newStartDate),
+                    endDate: formatDate(newEndDate),
+                    status: 'pending',
+                    completed: false,
+                    createdDate: new Date().toISOString()
+                };
+
+                tasks.push(newTask);
+                copiedCount++;
+            });
+
+            saveTasks();
+            updateQuickTasksTable();
+            updateDashboard();
+            
+            document.getElementById('selectAllTasks').checked = false;
+            document.querySelectorAll('.task-checkbox').forEach(cb => cb.checked = false);
+            
+            alert(`✅ Copy thành công ${copiedCount} công việc sang tháng tiếp theo!`);
+        }
+
+        // ===== UPDATE DROPDOWNS =====
+        function updateTeamDropdowns() {
+            ['quickMemberTeam', 'quickTaskTeam', 'teamLeader', 'dashboardTeam', 'reportTeam'].forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="all">Tất cả team</option>';
+                teams.forEach(team => {
+                    select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                });
+                if (id !== 'dashboardTeam' && id !== 'reportTeam') {
+                    select.innerHTML = '<option value="">-- Chọn --</option>' + select.innerHTML.substring('<option value="all">'.length);
+                }
+                if (currentValue) select.value = currentValue;
+            });
+        }
+
+        function updateMemberDropdowns() {
+            ['quickTaskMember', 'dashboardMember', 'reportMember'].forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="all">Tất cả thành viên</option>';
+                members.forEach(member => {
+                    select.innerHTML += `<option value="${member.id}">${member.name}</option>`;
+                });
+                if (currentValue) select.value = currentValue;
+            });
+        }
+
+        // ===== DASHBOARD =====
+        function updateDashboard() {
+            const team = document.getElementById('dashboardTeam').value;
+            const member = document.getElementById('dashboardMember').value;
+
+            let filtered = tasks.filter(t => {
+                if (team !== 'all' && team && t.team !== team) return false;
+                if (member !== 'all' && member && t.member !== member) return false;
+                return true;
+            });
+
+            const completed = filtered.filter(t => t.completed).length;
+            const total = filtered.length;
+            const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+            const overdue = filtered.filter(t => new Date(t.endDate) < new Date() && !t.completed).length;
+            const inProgress = filtered.filter(t => !t.completed && t.status === 'inprogress').length;
+
+            document.getElementById('dashKpiCompleted').textContent = completed;
+            document.getElementById('dashKpiCompletedText').textContent = `Trong ${total} công việc`;
+            document.getElementById('dashKpiRate').textContent = rate + '%';
+            document.getElementById('dashKpiOverdue').textContent = overdue;
+            document.getElementById('dashKpiInProgress').textContent = inProgress;
+
+            updateDashboardTable(filtered);
+            updateDashboardCharts(filtered);
+        }
+
+        function updateDashboardTable(filtered) {
+            const body = document.getElementById('dashTasksTableBody');
+            if (filtered.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" class="empty-state">Không có công việc phù hợp</td></tr>';
+                return;
+            }
+
+            body.innerHTML = filtered.map((task, index) => {
+                const memberName = members.find(m => m.id === task.member)?.name || 'N/A';
+                const teamName = teams.find(t => t.id === task.team)?.name || 'N/A';
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="task-name">${task.name}</td>
+                        <td>${memberName}</td>
+                        <td>${teamName}</td>
+                        <td><span class="priority-badge priority-${task.priority}">${task.priority === 'high' ? 'Cao' : task.priority === 'medium' ? 'TB' : 'Thấp'}</span></td>
+                        <td>${task.endDate}</td>
+                        <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateDashboardCharts(filtered) {
+            const completed = filtered.filter(t => t.completed).length;
+            const inProgress = filtered.filter(t => t.status === 'inprogress').length;
+            const pending = filtered.filter(t => t.status === 'pending').length;
+
+            const ctxStatus = document.getElementById('dashStatusChart').getContext('2d');
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Đang xử lý', 'Chờ xử lý'],
+                    datasets: [{
+                        data: [completed, inProgress, pending],
+                        backgroundColor: ['#16a34a', '#f97316', '#dbeafe']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            const memberStats = {};
+            filtered.forEach(task => {
+                const memberName = members.find(m => m.id === task.member)?.name || task.member;
+                if (!memberStats[memberName]) memberStats[memberName] = 0;
+                if (task.completed) memberStats[memberName]++;
+            });
+
+            const labels = Object.keys(memberStats);
+            const data = labels.map(name => memberStats[name]);
+
+            const ctxMember = document.getElementById('dashMemberChart').getContext('2d');
+            if (memberChart) memberChart.destroy();
+            memberChart = new Chart(ctxMember, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Công việc hoàn thành',
+                        data: data,
+                        backgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // ===== REPORT =====
+        function generateReport() {
+            const team = document.getElementById('reportTeam').value;
+            const member = document.getElementById('reportMember').value;
+
+            let filtered = tasks.filter(t => {
+                if (team !== 'all' && team && t.team !== team) return false;
+                if (member !== 'all' && member && t.member !== member) return false;
+                return true;
+            });
+
+            const completed = filtered.filter(t => t.completed).length;
+            const total = filtered.length;
+            const inProgress = filtered.filter(t => t.status === 'inprogress').length;
+            const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('reportTotal').textContent = total;
+            document.getElementById('reportCompleted').textContent = completed;
+            document.getElementById('reportInProgress').textContent = inProgress;
+            document.getElementById('reportPercent').textContent = rate + '%';
+
+            const memberStats = {};
+            filtered.forEach(task => {
+                const memberObj = members.find(m => m.id === task.member);
+                if (!memberObj) return;
+                const memberName = memberObj.name;
+                if (!memberStats[memberName]) {
+                    memberStats[memberName] = {
+                        team: memberObj.team,
+                        total: 0,
+                        completed: 0,
+                        inProgress: 0
+                    };
+                }
+                memberStats[memberName].total++;
+                if (task.completed) memberStats[memberName].completed++;
+                if (task.status === 'inprogress') memberStats[memberName].inProgress++;
+            });
+
+            const body = document.getElementById('reportMembersBody');
+            const memberNames = Object.keys(memberStats);
+            if (memberNames.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" class="empty-state">Không có dữ liệu</td></tr>';
+            } else {
+                body.innerHTML = memberNames.map(name => {
+                    const stats = memberStats[name];
+                    const teamName = teams.find(t => t.id === stats.team)?.name || 'N/A';
+                    const rate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+                    const evaluation = rate >= 80 ? '⭐ Xuất sắc' : rate >= 60 ? '👍 Tốt' : '📌 Cần cải';
+                    return `
+                        <tr>
+                            <td><strong>${name}</strong></td>
+                            <td>${teamName}</td>
+                            <td>${stats.total}</td>
+                            <td>${stats.completed}</td>
+                            <td>${stats.inProgress}</td>
+                            <td>${rate}%</td>
+                            <td>${evaluation}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            updateReportProgressChart(filtered);
+        }
+
+        function updateReportProgressChart(filtered) {
+            const dailyData = {};
+            filtered.forEach(task => {
+                const date = new Date(task.createdDate).toLocaleDateString('vi-VN');
+                if (!dailyData[date]) dailyData[date] = { total: 0, completed: 0 };
+                dailyData[date].total++;
+                if (task.completed) dailyData[date].completed++;
+            });
+
+            const dates = Object.keys(dailyData).sort();
+            const completedPerDay = dates.map(d => dailyData[d].completed);
+            const totalPerDay = dates.map(d => dailyData[d].total);
+
+            const ctxProgress = document.getElementById('progressChart').getContext('2d');
+            if (progressChart) progressChart.destroy();
+            progressChart = new Chart(ctxProgress, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Hoàn thành',
+                            data: completedPerDay,
+                            borderColor: '#16a34a',
+                            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Tổng công việc',
+                            data: totalPerDay,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        // ===== SAVE TO STORAGE =====
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function saveMembers() {
+            localStorage.setItem('members', JSON.stringify(members));
+        }
+
+        function saveTeams() {
+            localStorage.setItem('teams', JSON.stringify(teams));
+        }
+
+        function saveAllData() {
+            saveTasks();
+            saveMembers();
+            saveTeams();
+        }
+
+        // ===== LOAD DATA =====
+        function loadAllData() {
+            updateTeamDropdowns();
+            updateMemberDropdowns();
+            updateTeamsTable();
+            updateQuickMembersTable();
+            updateQuickTasksTable();
+            updateDashboard();
+        }
+
+        // ===== INITIALIZATION =====
+        initializeData();
+        
+        const savedMembers = JSON.parse(localStorage.getItem('members')) || [];
+        const savedTeams = JSON.parse(localStorage.getItem('teams')) || [];
+        const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        
+        if (savedMembers.length > 0) members = savedMembers;
+        if (savedTeams.length > 0) teams = savedTeams;
+        if (savedTasks.length > 0) tasks = savedTasks;
+    </script>
+</body>
+</html>
