@@ -953,7 +953,7 @@
                     <div class="section-title">📋 Danh mục Công việc</div>
                     <div style="display: flex; gap: 8px;">
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                            <input type="checkbox" id="selectAllTasks" onchange="selectAllTasks(this.checked)" style="cursor: pointer;">
+                            <input type="checkbox" id="selectAllTasks" onchange="toggleSelectAll(this.checked)" style="cursor: pointer;">
                             <span style="font-size: 13px; color: #666;">Chọn tất cả</span>
                         </label>
                         <button class="btn btn-primary" onclick="copyTasksToNextMonth()" style="padding: 8px 16px;">📅 Copy sang tháng tiếp theo</button>
@@ -1095,10 +1095,41 @@
             <div class="header">
                 <div class="header-title">
                     <h1>⚙️ Công cụ Hệ thống</h1>
+                    <p>Sao lưu dữ liệu và theo dõi lịch sử hoàn thành công việc</p>
                 </div>
             </div>
+
+            <div class="admin-panel">
+                <div class="admin-title">💾 Sao lưu & Phục hồi dữ liệu</div>
+                <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+                    Dữ liệu được lưu tự động trong trình duyệt. Để an toàn, hãy tải file sao lưu định kỳ.
+                    Khi đổi máy tính hoặc trình duyệt, dùng chức năng Phục hồi để nạp lại dữ liệu.
+                </p>
+                <div class="form-actions" style="margin-top: 0;">
+                    <button class="btn btn-primary" onclick="exportData()">📥 Tải file Sao lưu (JSON)</button>
+                    <label class="btn btn-success" style="display: inline-flex; align-items: center; cursor: pointer;">
+                        📤 Phục hồi từ file Sao lưu
+                        <input type="file" accept=".json,application/json" onchange="importData(this)" style="display: none;">
+                    </label>
+                </div>
+            </div>
+
             <div class="tasks-section">
-                <p style="text-align: center; padding: 40px; color: #999;">Công cụ sẽ được thêm vào sau</p>
+                <div class="section-title">📝 Nhật ký hoàn thành công việc của thành viên</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Thời gian</th>
+                            <th>Thành viên</th>
+                            <th>Công việc</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="completionLogBody">
+                        <tr><td colspan="5" class="empty-state">Chưa có ghi nhận nào</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -1224,15 +1255,31 @@
             firstLogin: true
         };
 
+        let completionLog = JSON.parse(localStorage.getItem('completionLog')) || [];
+
         let currentUser = null;
         let userType = null;
         let statusChart, memberChart, progressChart, empStatusChart;
+
+        // Đọc lại dữ liệu mới nhất từ bộ nhớ (tránh mất dữ liệu khi mở nhiều tab)
+        function reloadFromStorage() {
+            const savedTasks = localStorage.getItem('tasks');
+            const savedMembers = localStorage.getItem('members');
+            const savedTeams = localStorage.getItem('teams');
+            const savedLog = localStorage.getItem('completionLog');
+            if (savedTasks) tasks = JSON.parse(savedTasks);
+            if (savedMembers) members = JSON.parse(savedMembers);
+            if (savedTeams) teams = JSON.parse(savedTeams);
+            if (savedLog) completionLog = JSON.parse(savedLog);
+        }
 
         // ===== INITIALIZE DATA =====
         function initializeData() {
             const isFirstLoad = !localStorage.getItem('initialized');
             
-            if (teams.length === 0 || isFirstLoad) {
+            // CHỈ tạo dữ liệu mẫu khi lần đầu sử dụng VÀ chưa có dữ liệu
+            // KHÔNG BAO GIỜ ghi đè dữ liệu Admin đã nhập
+            if (isFirstLoad && teams.length === 0) {
                 teams = [];
                 teams.push({
                     id: 'team-default',
@@ -1243,7 +1290,7 @@
                 });
             }
 
-            if (members.length === 0 || isFirstLoad) {
+            if (isFirstLoad && members.length === 0) {
                 const defaultMembers = [
                     { id: 'MANHTD', name: 'Trịnh Đức Mạnh', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
                     { id: 'MENDT', name: 'Đào Thị Mến', password: '123456', team: 'team-default', createdDate: new Date().toISOString() },
@@ -1259,7 +1306,7 @@
                 members = defaultMembers;
             }
 
-            if (tasks.length === 0 || isFirstLoad) {
+            if (isFirstLoad && tasks.length === 0) {
                 const defaultTasks = [
                     { id: 1, name: 'Phân tích yêu cầu', desc: 'Phân tích yêu cầu khách hàng', member: 'MANHTD', team: 'team-default', priority: 'high', startDate: '2026-07-17', endDate: '2026-07-20', status: 'inprogress', completed: false, createdDate: new Date().toISOString() },
                     { id: 2, name: 'Thiết kế hệ thống', desc: 'Thiết kế kiến trúc hệ thống', member: 'MENDT', team: 'team-default', priority: 'high', startDate: '2026-07-17', endDate: '2026-07-25', status: 'inprogress', completed: false, createdDate: new Date().toISOString() },
@@ -1275,9 +1322,8 @@
                 tasks = defaultTasks;
             }
 
-            saveAllData();
-            
             if (isFirstLoad) {
+                saveAllData();
                 localStorage.setItem('initialized', 'true');
             }
         }
@@ -1393,6 +1439,9 @@
         function loginSuccess(type, userId) {
             userType = type;
             currentUser = userId;
+
+            // Luôn đọc dữ liệu mới nhất khi đăng nhập
+            reloadFromStorage();
             
             document.getElementById('adminLoginScreen').style.display = 'none';
             document.getElementById('employeeLoginScreen').style.display = 'none';
@@ -1445,10 +1494,15 @@
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
 
+            // Đọc dữ liệu mới nhất mỗi khi chuyển tab (nhận kết quả nhân viên tích chọn)
+            reloadFromStorage();
+
             if (tabName === 'dashboard') updateDashboard();
             else if (tabName === 'add-member') updateQuickMembersTable();
             else if (tabName === 'add-task') updateQuickTasksTable();
             else if (tabName === 'report') generateReport();
+            else if (tabName === 'tasks') { updateTeamsTable(); updateTeamDropdowns(); }
+            else if (tabName === 'tools') updateCompletionLogTable();
         }
 
         function switchEmployeeTab(tabName) {
@@ -1499,7 +1553,7 @@
                             <td><span class="priority-badge priority-${task.priority}">${task.priority === 'high' ? 'Cao' : task.priority === 'medium' ? 'TB' : 'Thấp'}</span></td>
                             <td>${task.endDate}</td>
                             <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
-                            <td><input type="checkbox" class="toggle-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskComplete(${task.id})"></td>
+                            <td><input type="checkbox" class="toggle-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskComplete('${task.id}')"></td>
                         </tr>
                     `;
                 }).join('');
@@ -1551,11 +1605,31 @@
         }
 
         function toggleTaskComplete(taskId) {
-            const task = tasks.find(t => t.id === taskId);
+            // Đọc dữ liệu mới nhất trước khi cập nhật để không mất thay đổi từ Admin
+            reloadFromStorage();
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (task) {
                 task.completed = !task.completed;
                 task.status = task.completed ? 'completed' : 'inprogress';
+
+                // Ghi nhận kết quả hoàn thành: ai, việc gì, lúc nào
+                if (task.completed) {
+                    task.completedDate = new Date().toISOString();
+                    task.completedBy = currentUser;
+                } else {
+                    task.completedDate = null;
+                    task.completedBy = null;
+                }
+                completionLog.push({
+                    taskId: task.id,
+                    taskName: task.name,
+                    member: currentUser,
+                    time: new Date().toISOString(),
+                    action: task.completed ? '✅ Hoàn thành' : '↩️ Bỏ hoàn thành'
+                });
+
                 saveTasks();
+                saveCompletionLog();
                 updateEmployeeTasks();
                 updateEmployeeProgress();
             }
@@ -1764,7 +1838,7 @@
             }
 
             const task = {
-                id: Date.now(),
+                id: 'task-' + Date.now(),
                 name,
                 desc,
                 member,
@@ -1819,8 +1893,8 @@
                         <td>${task.endDate}</td>
                         <td><span class="status-badge status-${task.status}">${task.status === 'completed' ? 'Xong' : task.status === 'inprogress' ? 'Xử lý' : 'Chờ'}</span></td>
                         <td class="task-actions">
-                            <button class="btn-edit" onclick="openEditTaskModal(${task.id})">✏️ Sửa</button>
-                            <button class="btn-delete" onclick="deleteTask(${task.id})">Xóa</button>
+                            <button class="btn-edit" onclick="openEditTaskModal('${task.id}')">✏️ Sửa</button>
+                            <button class="btn-delete" onclick="deleteTask('${task.id}')">Xóa</button>
                         </td>
                     </tr>
                 `;
@@ -1917,7 +1991,7 @@
 
         function deleteTask(taskId) {
             if (confirm('🗑️ Xóa công việc này?')) {
-                tasks = tasks.filter(t => t.id !== taskId);
+                tasks = tasks.filter(t => String(t.id) !== String(taskId));
                 saveTasks();
                 updateQuickTasksTable();
                 updateDashboard();
@@ -1929,7 +2003,7 @@
         let currentEditingTaskId = null;
         function openEditTaskModal(taskId) {
             currentEditingTaskId = taskId;
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (!task) return;
 
             document.getElementById('editTaskName').value = task.name;
@@ -1971,7 +2045,7 @@
                 return;
             }
 
-            const task = tasks.find(t => t.id === currentEditingTaskId);
+            const task = tasks.find(t => String(t.id) === String(currentEditingTaskId));
             if (task) {
                 task.name = name;
                 task.desc = desc;
@@ -1996,7 +2070,7 @@
         }
 
         // ===== COPY TASKS TO NEXT MONTH =====
-        function selectAllTasks(checked) {
+        function toggleSelectAll(checked) {
             document.querySelectorAll('.task-checkbox').forEach(checkbox => {
                 checkbox.checked = checked;
             });
@@ -2009,8 +2083,8 @@
                 return;
             }
 
-            const selectedTaskIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
-            const selectedTasks = tasks.filter(t => selectedTaskIds.includes(t.id));
+            const selectedTaskIds = Array.from(selectedCheckboxes).map(cb => String(cb.value));
+            const selectedTasks = tasks.filter(t => selectedTaskIds.includes(String(t.id)));
 
             if (selectedTasks.length === 0) return;
 
@@ -2036,7 +2110,7 @@
                 const newEndDate = addMonths(endDate, 1);
 
                 const newTask = {
-                    id: Date.now() + Math.random(),
+                    id: 'task-' + Date.now() + '-' + Math.floor(Math.random() * 100000),
                     name: task.name,
                     desc: task.desc,
                     member: task.member,
@@ -2312,23 +2386,126 @@
             window.print();
         }
 
+        // ===== BACKUP / RESTORE =====
+        function exportData() {
+            reloadFromStorage();
+            const data = {
+                exportDate: new Date().toISOString(),
+                tasks: tasks,
+                members: members,
+                teams: teams,
+                completionLog: completionLog,
+                adminAccount: adminAccount
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'sao-luu-quan-ly-cong-viec-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            alert('✅ Đã tải file sao lưu về máy');
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.tasks && !data.members && !data.teams) {
+                        alert('❌ File sao lưu không hợp lệ');
+                        return;
+                    }
+                    if (!confirm('⚠️ Phục hồi sẽ thay thế toàn bộ dữ liệu hiện tại. Tiếp tục?')) return;
+                    if (data.tasks) tasks = data.tasks;
+                    if (data.members) members = data.members;
+                    if (data.teams) teams = data.teams;
+                    if (data.completionLog) completionLog = data.completionLog;
+                    if (data.adminAccount) {
+                        adminAccount = data.adminAccount;
+                        persist('adminAccount', adminAccount);
+                    }
+                    saveAllData();
+                    localStorage.setItem('initialized', 'true');
+                    loadAllData();
+                    updateCompletionLogTable();
+                    alert('✅ Phục hồi dữ liệu thành công');
+                } catch (err) {
+                    alert('❌ Không đọc được file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        // ===== COMPLETION LOG TABLE =====
+        function updateCompletionLogTable() {
+            const body = document.getElementById('completionLogBody');
+            if (!body) return;
+            if (completionLog.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" class="empty-state">Chưa có ghi nhận nào</td></tr>';
+                return;
+            }
+            body.innerHTML = [...completionLog].reverse().map((log, index) => {
+                const memberName = members.find(m => m.id === log.member)?.name || log.member;
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${new Date(log.time).toLocaleString('vi-VN')}</td>
+                        <td class="task-name">${memberName}</td>
+                        <td>${log.taskName}</td>
+                        <td>${log.action}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ===== CROSS-TAB SYNC =====
+        // Tự động cập nhật khi dữ liệu thay đổi ở tab trình duyệt khác
+        window.addEventListener('storage', function() {
+            reloadFromStorage();
+            if (userType === 'admin') {
+                loadAllData();
+                updateCompletionLogTable();
+            } else if (userType === 'employee') {
+                updateEmployeeDashboard();
+            }
+        });
+
         // ===== SAVE TO STORAGE =====
+        function persist(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (e) {
+                alert('⚠️ Không thể lưu dữ liệu vào trình duyệt: ' + e.message + '\n\nHãy dùng chức năng "Sao lưu dữ liệu" trong tab ⚙️ Công cụ để tải file backup.');
+                return false;
+            }
+        }
+
         function saveTasks() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            persist('tasks', tasks);
         }
 
         function saveMembers() {
-            localStorage.setItem('members', JSON.stringify(members));
+            persist('members', members);
         }
 
         function saveTeams() {
-            localStorage.setItem('teams', JSON.stringify(teams));
+            persist('teams', teams);
+        }
+
+        function saveCompletionLog() {
+            persist('completionLog', completionLog);
         }
 
         function saveAllData() {
             saveTasks();
             saveMembers();
             saveTeams();
+            saveCompletionLog();
         }
 
         // ===== LOAD DATA =====
